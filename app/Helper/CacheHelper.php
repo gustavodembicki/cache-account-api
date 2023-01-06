@@ -45,6 +45,16 @@ class CacheHelper
     }
 
     /**
+     * Static method responsable to delete all saved caches
+     * 
+     * @return void
+     */
+    public static function deleteAll(): void
+    {
+        Cache::flush();
+    }
+
+    /**
      * Static method responsable to verify if cache exists
      * 
      * @param string $cacheKey
