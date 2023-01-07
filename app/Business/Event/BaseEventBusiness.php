@@ -40,19 +40,20 @@ abstract class BaseEventBusiness
 
     private function deposit()
     {
-        if (CacheHelper::cacheExists("account_{$this->data["destination"]}")) {
-            $accountCache = CacheHelper::get("account_{$this->data["destination"]}");
+        $accountCacheName = "account_{$this->data["destination"]}";
+        
+        if (CacheHelper::cacheExists($accountCacheName)) {
+            $accountCache = CacheHelper::get($accountCacheName);
             $this->data["amount"] += $accountCache["amount"];
         }
         
-        CacheHelper::put("account_{$this->data["destination"]}", $this->data);
+        CacheHelper::put($accountCacheName, $this->data);
 
         return ResponseHelper::return(gettype($accountCache) != "undefined" ? 200 : 201, [
             "destination" => [
                 "id" => $this->data["destination"],
                 "balance" => $this->data["amount"]
-            ],
-            "cache_test" => CacheHelper::get("account_{$this->data["destination"]}") //Temporary 
+            ]
         ]);
     }
 
