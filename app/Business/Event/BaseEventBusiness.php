@@ -41,6 +41,7 @@ abstract class BaseEventBusiness
     private function deposit()
     {
         $accountCacheName = "account_{$this->data["destination"]}";
+        $accountCache = [];
         
         if (CacheHelper::cacheExists($accountCacheName)) {
             $accountCache = CacheHelper::get($accountCacheName);
@@ -49,7 +50,7 @@ abstract class BaseEventBusiness
         
         CacheHelper::put($accountCacheName, $this->data);
 
-        return ResponseHelper::return(gettype($accountCache) != "undefined" ? 200 : 201, [
+        return ResponseHelper::return(!empty($accountCache) ? 200 : 201, [
             "destination" => [
                 "id" => $this->data["destination"],
                 "balance" => $this->data["amount"]
@@ -80,6 +81,31 @@ abstract class BaseEventBusiness
 
     private function transfer()
     {
+        $accountOriginName = "account_{$this->data["origin"]}";
+        $accountDestinationName = "account_{$this->data["destination"]}";
 
+        if (!CacheHelper::cacheExists($accountOriginName) || !CacheHelper::cacheExists($accountDestinationName)) {
+            return ResponseHelper::return(Response::HTTP_NOT_FOUND);
+        }
+
+        $accountOrigin = CacheHelper::get($accountOriginName);
+        $accountOrigin["amount"] -= $this->data["amount"];
+
+        $accountDestination = CacheHelper::get($accountDestinationName);
+        $accountDestination["amount"] += $this->data["amount"];
+
+        CacheHelper::put($accountOriginName, $accountOrigin);
+        CacheHelper::put($accountDestinationName, $accountDestination);
+
+        return ResponseHelper::return(Response::HTTP_CREATED, [
+            "origin" => [
+                "id" => $this->data["origin"],
+                "balance" => $accountOrigin["amount"]
+            ],
+            "destination" => [
+                "id" => $this->data["destination"],
+                "balance" => $accountDestination["amount"]
+            ]
+        ]);
     }
 }
