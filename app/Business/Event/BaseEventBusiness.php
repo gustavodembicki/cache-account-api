@@ -3,7 +3,6 @@
 namespace App\Business\Event;
 
 use App\Helper\CacheHelper;
-use App\Helper\ResponseHelper;
 use Illuminate\Http\Response;
 
 abstract class BaseEventBusiness
