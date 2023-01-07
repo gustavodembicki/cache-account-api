@@ -11,6 +11,6 @@ class ResetController
     {
         CacheHelper::deleteAll();
 
-        return ResponseHelper::return(200, "", "OK");
+        return ResponseHelper::return(200);
     }
 }
