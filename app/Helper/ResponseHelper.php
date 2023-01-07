@@ -10,15 +10,11 @@ class ResponseHelper
      * Static method responsable to centralize the Http Returns
      * 
      * @param int $code
-     * @param string $status
-     * @param mixed $body
+     * @param array $body
      * @return JsonResponse
      */
-    public static function return(int $code, string $status, $body): JsonResponse
+    public static function return(int $code, array $body = []): JsonResponse
     {
-        return response()->json([
-            "status" => $status,
-            "data" => $body
-        ], $code);
+        return response()->json($body, $code);
     }
 }
