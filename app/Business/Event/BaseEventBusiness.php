@@ -37,30 +37,42 @@ abstract class BaseEventBusiness
         return $this->$actualType();
     }
 
-    private function deposit()
+    /**
+     * Private method responsable for deposit rule
+     * 
+     * @param array $depositData - Used in transfer when the destination doesnt exists
+     * @return Response
+     */
+    private function deposit(array $depositData = []): Response
     {
-        $accountCacheName = "account_{$this->data["destination"]}";
+        $deposit = empty($depositData) ? $this->data : $depositData;
+        $accountCacheName = "account_{$deposit["destination"]}";
         $accountCache = [];
         
         if (CacheHelper::cacheExists($accountCacheName)) {
             $accountCache = CacheHelper::get($accountCacheName);
-            $this->data["amount"] += $accountCache["balance"];
+            $deposit["amount"] += $accountCache["balance"];
         }
         
         CacheHelper::put($accountCacheName, [
-            "id" => $this->data["destination"],
-            "balance" => $this->data["amount"]
+            "id" => $deposit["destination"],
+            "balance" => $deposit["amount"]
         ]);
 
         return response([
             "destination" => [
-                "id" => $this->data["destination"],
-                "balance" => $this->data["amount"]
+                "id" => $deposit["destination"],
+                "balance" => $deposit["amount"]
             ]
         ], Response::HTTP_CREATED);
     }
 
-    private function withdraw()
+    /**
+     * Private method responsable for withdraw rule
+     * 
+     * @return Response
+     */
+    private function withdraw(): Response
     {
         $accountCacheName = "account_{$this->data["origin"]}";
 
@@ -81,7 +93,12 @@ abstract class BaseEventBusiness
         ], Response::HTTP_CREATED);
     }
 
-    private function transfer()
+    /**
+     * Private method responsable for transfer rule
+     * 
+     * @return Response
+     */
+    private function transfer(): Response
     {
         $accountOriginName = "account_{$this->data["origin"]}";
         $accountDestinationName = "account_{$this->data["destination"]}";
@@ -93,10 +110,18 @@ abstract class BaseEventBusiness
         $accountOrigin = CacheHelper::get($accountOriginName);
         $accountOrigin["balance"] -= $this->data["amount"];
 
-        $accountDestination = [
-            "id" => $this->data["destination"],
-            "balance" => $this->data["amount"]
-        ];
+        $accountDestination = CacheHelper::get($accountDestinationName);
+
+        if (!$accountDestination) {
+            $responseDeposit = $this->deposit([
+                "destination" => $this->data["destination"],
+                "amount" => 0
+            ]);
+
+            $accountDestination = json_decode($responseDeposit->getContent(), true)["destination"];
+        }
+
+        $accountDestination["balance"] += $this->data["amount"];
 
         CacheHelper::put($accountOriginName, $accountOrigin);
         CacheHelper::put($accountDestinationName, $accountDestination);
