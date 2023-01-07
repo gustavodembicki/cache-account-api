@@ -19,6 +19,6 @@ class BalanceController extends Controller
 
         $account = CacheHelper::get("account_{$data["account_id"]}");
         
-        return response($account["amount"], 200);
+        return response($account["balance"], 200);
     }
 }

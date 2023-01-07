@@ -45,7 +45,7 @@ abstract class BaseEventBusiness
         
         if (CacheHelper::cacheExists($accountCacheName)) {
             $accountCache = CacheHelper::get($accountCacheName);
-            $this->data["amount"] += $accountCache["amount"];
+            $this->data["amount"] += $accountCache["balance"];
         }
         
         CacheHelper::put($accountCacheName, [
@@ -58,7 +58,7 @@ abstract class BaseEventBusiness
                 "id" => $this->data["destination"],
                 "balance" => $this->data["amount"]
             ]
-        ], !empty($accountCache) ? 200 : 201);
+        ], Response::HTTP_CREATED);
     }
 
     private function withdraw()
@@ -87,15 +87,17 @@ abstract class BaseEventBusiness
         $accountOriginName = "account_{$this->data["origin"]}";
         $accountDestinationName = "account_{$this->data["destination"]}";
 
-        if (!CacheHelper::cacheExists($accountOriginName) || !CacheHelper::cacheExists($accountDestinationName)) {
+        if (!CacheHelper::cacheExists($accountOriginName)) {
             return response(0, Response::HTTP_NOT_FOUND);
         }
 
         $accountOrigin = CacheHelper::get($accountOriginName);
         $accountOrigin["balance"] -= $this->data["amount"];
 
-        $accountDestination = CacheHelper::get($accountDestinationName);
-        $accountDestination["balance"] += $this->data["amount"];
+        $accountDestination = [
+            "id" => $this->data["destination"],
+            "balance" => $this->data["amount"]
+        ];
 
         CacheHelper::put($accountOriginName, $accountOrigin);
         CacheHelper::put($accountDestinationName, $accountDestination);
