@@ -26,32 +26,32 @@ class CacheHelper
      * 
      * @param string $cacheKey
      * @param mixed $cacheValue
-     * @return void
+     * @return bool
      */
-    public static function put(string $cacheKey, $cacheValue): void
+    public static function put(string $cacheKey, $cacheValue): bool
     {
-        Cache::put($cacheKey, $cacheValue);
+        return Cache::put($cacheKey, $cacheValue);
     }
 
     /**
      * Static method responsable to delete a cache
      * 
      * @param string $cacheKey
-     * @return void
+     * @return bool
      */
-    public static function delete(string $cacheKey): void
+    public static function delete(string $cacheKey): bool
     {
-        Cache::forget($cacheKey);
+        return Cache::forget($cacheKey);
     }
 
     /**
      * Static method responsable to delete all saved caches
      * 
-     * @return void
+     * @return bool
      */
-    public static function deleteAll(): void
+    public static function deleteAll(): bool
     {
-        Cache::flush();
+        return Cache::flush();
     }
 
     /**
