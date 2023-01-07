@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Business\Event\EventBusiness;
-use Illuminate\Http\Request;
+use App\Http\Requests\EventRequest;
 
 class EventController extends Controller
 {
-    public function event(Request $request, EventBusiness $business)
+    public function event(EventRequest $request, EventBusiness $business)
     {
-        return $business->typeRead($request->all());
+        return $business->triggeredEvent($request->all());
     }
 }
