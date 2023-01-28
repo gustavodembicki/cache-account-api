@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class EventRequest extends FormRequest
 {
@@ -29,5 +31,16 @@ class EventRequest extends FormRequest
             'destination' => 'numeric',
             'origin' => 'numeric'
         ];
+    }
+
+    /**
+     * Failed validation
+     * 
+     * @param Validator $validator
+     * @return void
+     */
+    public function failedValidation(Validator $validator) 
+    {
+        throw new HttpResponseException(response()->json($validator->errors(), 422));
     }
 }

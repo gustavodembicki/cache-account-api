@@ -9,7 +9,6 @@ class EventBusiness extends BaseEventBusiness
     public function triggeredEvent(array $data)
     {
         $this->data = $data;
-
         return $this->typeRead();
     }
 }

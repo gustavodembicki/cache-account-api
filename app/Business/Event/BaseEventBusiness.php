@@ -3,7 +3,7 @@
 namespace App\Business\Event;
 
 use App\Helper\CacheHelper;
-use Illuminate\Http\Response;
+use Exception;
 
 abstract class BaseEventBusiness
 {
@@ -11,7 +11,11 @@ abstract class BaseEventBusiness
     protected $data;
 
     /** @var array $typesAccepted */
-    private $typesAccepted = ["deposit", "withdraw", "transfer"];
+    private $typesAccepted = [
+        "deposit", 
+        "withdraw", 
+        "transfer"
+    ];
 
     /** 
      * Method responsable to read the type of event and call the correct method
@@ -31,7 +35,7 @@ abstract class BaseEventBusiness
         }
 
         if (!$typeExists) {
-            return response("Type informed doesnt exists", Response::HTTP_UNPROCESSABLE_ENTITY);
+            throw new Exception("Type informed doesnt exists", 422);
         }
 
         return $this->$actualType();
@@ -41,9 +45,9 @@ abstract class BaseEventBusiness
      * Private method responsable for deposit rule
      * 
      * @param array $depositData - Used in transfer when the destination doesnt exists
-     * @return Response
+     * @return array
      */
-    private function deposit(array $depositData = []): Response
+    private function deposit(array $depositData = []): array
     {
         $deposit = empty($depositData) ? $this->data : $depositData;
         $accountCacheName = "account_{$deposit["destination"]}";
@@ -59,82 +63,87 @@ abstract class BaseEventBusiness
             "balance" => $deposit["amount"]
         ]);
 
-        return response([
-            "destination" => [
-                "id" => $deposit["destination"],
-                "balance" => $deposit["amount"]
-            ]
-        ], Response::HTTP_CREATED);
+        return [
+            "data" => [
+                "destination" => [
+                    "id" => $deposit["destination"],
+                    "balance" => $deposit["amount"]
+                ]
+            ],
+            "code" => 201
+        ];
     }
 
     /**
      * Private method responsable for withdraw rule
      * 
-     * @return Response
+     * @return array
      */
-    private function withdraw(): Response
+    private function withdraw(): array
     {
         $accountCacheName = "account_{$this->data["origin"]}";
 
         if (!CacheHelper::cacheExists($accountCacheName)) {
-            return response(0, Response::HTTP_NOT_FOUND);
+            throw new Exception(0, 404);
         }
 
         $accountCache = CacheHelper::get($accountCacheName);
+
+        if ($accountCache["balance"] <= 0 || $accountCache["balance"] < $this->data["amount"]) {
+            throw new Exception("This account doesnt have enough balance to withdraw", 403);
+        }
+
         $accountCache["balance"] -= $this->data["amount"];
 
         CacheHelper::put($accountCacheName, $accountCache);
 
-        return response([
-            "origin" => [
-                "id" => $this->data["origin"],
-                "balance" => $accountCache["balance"]
-            ]
-        ], Response::HTTP_CREATED);
+        return [
+            "data" => [
+                "origin" => [
+                    "id" => $this->data["origin"],
+                    "balance" => $accountCache["balance"]
+                ]
+            ],
+            "code" => 201
+        ];
     }
 
     /**
      * Private method responsable for transfer rule
      * 
-     * @return Response
+     * @return array
      */
-    private function transfer(): Response
+    private function transfer(): array
     {
-        $accountOriginName = "account_{$this->data["origin"]}";
-        $accountDestinationName = "account_{$this->data["destination"]}";
+        $withdraw = $this->withdraw()["data"]["origin"];
+        $deposit = $this->deposit()["data"]["destination"];
 
-        if (!CacheHelper::cacheExists($accountOriginName)) {
-            return response(0, Response::HTTP_NOT_FOUND);
-        }
-
-        $accountOrigin = CacheHelper::get($accountOriginName);
-        $accountOrigin["balance"] -= $this->data["amount"];
-
-        $accountDestination = CacheHelper::get($accountDestinationName);
-
-        if (!$accountDestination) {
-            $responseDeposit = $this->deposit([
-                "destination" => $this->data["destination"],
-                "amount" => 0
-            ]);
-
-            $accountDestination = json_decode($responseDeposit->getContent(), true)["destination"];
-        }
-
-        $accountDestination["balance"] += $this->data["amount"];
-
-        CacheHelper::put($accountOriginName, $accountOrigin);
-        CacheHelper::put($accountDestinationName, $accountDestination);
-
-        return response([
-            "origin" => [
-                "id" => $accountOrigin["id"],
-                "balance" => $accountOrigin["balance"]
+        return [
+            "data" => [
+                "origin" => [
+                    "id" => $withdraw["id"],
+                    "balance" => $withdraw["balance"]
+                ],
+                "destination" => [
+                    "id" => $deposit["id"],
+                    "balance" => $deposit["balance"]
+                ]
             ],
-            "destination" => [
-                "id" => $accountDestination["id"],
-                "balance" => $accountDestination["balance"]
-            ]
-        ], Response::HTTP_CREATED);
+            "code" => 201
+        ];
+    }
+
+    /**
+     * Private method responsable to validate if method exists and execute it
+     * @param string $method
+     * @return string
+     */
+    private function methodExists(string $method): string
+    {
+        if (!method_exists($this, $method)) {
+            throw new Exception("Method called doesnt exists", 404);
+        }
+
+        return $this->$method;
     }
 }
