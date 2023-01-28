@@ -4,6 +4,7 @@ namespace Tests\Unit\Business\Event;
 
 use App\Business\Event\EventBusiness;
 use App\Helper\CacheHelper;
+use Exception;
 use Tests\TestCase;
 
 class EventBusinessTest extends TestCase
@@ -33,11 +34,12 @@ class EventBusinessTest extends TestCase
             "destination" => 100
         ];
 
-        //When
-        $response = $this->eventBusiness->triggeredEvent($data);
-
         //Then
-        $this->assertEquals(422, $response->getStatusCode());
+        $this->expectException(Exception::class);
+        $this->withoutExceptionHandling();
+        
+        //When
+        $this->eventBusiness->triggeredEvent($data);
     }
 
     /** @test */
@@ -55,11 +57,14 @@ class EventBusinessTest extends TestCase
 
         //Then
         $this->assertEquals([
-            "destination" => [
-                "id" => $data["destination"],
-                "balance" => 10
-            ]
-        ], json_decode($response->getContent(), true));
+            "data" => [
+                "destination" => [
+                    "id" => $data["destination"],
+                    "balance" => 10
+                ]
+            ],
+            "code" => 201
+        ], $response);
     }
 
     /** @test */
@@ -82,11 +87,15 @@ class EventBusinessTest extends TestCase
 
         //Then
         $this->assertEquals([
-            "destination" => [
-                "id" => $data["destination"],
-                "balance" => 30
-            ]
-        ], json_decode($response->getContent(), true));
+            "data" => [
+                "destination" => [
+                    "id" => $data["destination"],
+                    "balance" => 30
+                ]
+            ],
+            "code" => 201
+            
+        ], $response);
     }
 
     /** @test */
@@ -99,12 +108,14 @@ class EventBusinessTest extends TestCase
             "amount" => 10
         ];
 
-        //When
-        $response = $this->eventBusiness->triggeredEvent($data);
-
         //Then
-        $this->assertEquals(404, $response->getStatusCode());
-        $this->assertEquals(0, json_decode($response->getContent(), true));
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage("0");
+        $this->expectExceptionCode(404);
+        $this->withoutExceptionHandling();
+
+        //When
+        $this->eventBusiness->triggeredEvent($data);
     }
 
     /** @test */
@@ -126,11 +137,14 @@ class EventBusinessTest extends TestCase
 
         //Then
         $this->assertEquals([
-            "origin" => [
-                "id" => $data["origin"],
-                "balance" => 20
-            ]
-        ], json_decode($response->getContent(), true));
+            "data" => [
+                "origin" => [
+                    "id" => $data["origin"],
+                    "balance" => 20
+                ]
+            ],
+            "code" => 201
+        ], $response);
     }
 
     /** @test */
@@ -144,12 +158,14 @@ class EventBusinessTest extends TestCase
             "amount" => 50
         ];
 
-        //When
-        $response = $this->eventBusiness->triggeredEvent($data);
-
         //Then
-        $this->assertEquals(404, $response->getStatusCode());
-        $this->assertEquals(0, json_decode($response->getContent(), true));
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage("0");
+        $this->expectExceptionCode(404);
+        $this->withoutExceptionHandling();
+
+        //When
+        $this->eventBusiness->triggeredEvent($data);
     }
 
     /** @test */
@@ -177,14 +193,17 @@ class EventBusinessTest extends TestCase
 
         //Then
         $this->assertEquals([
-            "origin" => [
-                "id" => $data["origin"],
-                "balance" => 100
+            "data" => [
+                "origin" => [
+                    "id" => $data["origin"],
+                    "balance" => 100
+                ],
+                "destination" => [
+                    "id" => $data["destination"],
+                    "balance" => 60
+                ]
             ],
-            "destination" => [
-                "id" => $data["destination"],
-                "balance" => 60
-            ]
-        ], json_decode($response->getContent(), true));
+            "code" => 201
+        ], $response);
     }
 }
